@@ -1,14 +1,20 @@
 # 🅿️ SmartPark - Parking Management System
 
-A full-stack web application that automates the complete lifecycle of parking — from slot selection at entry to billing and slot release at exit. Features real-time synchronization across multiple pages with automatic refresh capabilities.
+A modern Single Page Application (SPA) that automates the complete lifecycle of parking — from slot selection at entry to billing and slot release at exit. Features real-time synchronization, smooth navigation, and automatic refresh capabilities.
 
 ## ✨ Latest Features & Updates
+
+### 🔄 Single Page Application
+- **SPA Architecture**: Seamless navigation without page reloads
+- **Navigation Bar**: Easy switching between Entrance, Exit, and Admin pages
+- **Smooth Transitions**: Modern user experience with React Router v6
+- **Consistent Interface**: Navigation available on all pages
 
 ### 🔄 Real-Time Synchronization
 - **Instant Updates**: Bookings immediately reflect across all pages
 - **Auto-Refresh**: Exit Counter and Admin Dashboard automatically refresh when new bookings occur
 - **State Persistence**: Consistent data across page refreshes and browser sessions
-- **Cross-Page Communication**: Seamless data flow between Entrance, Exit, and Admin pages
+- **Cross-Page Communication**: Seamless data flow between all pages
 
 ### 🎯 Three-Page Architecture
 - **Entrance Kiosk (/)** - Driver-facing booking interface
@@ -19,11 +25,12 @@ A full-stack web application that automates the complete lifecycle of parking �
 - **useReducer Pattern**: Robust state management with predictable updates
 - **localStorage Integration**: Reliable data persistence with proper error handling
 - **NaN Protection**: Fixed revenue calculations and statistics
-- **Clean Architecture**: Removed debug code and optimized for production
+- **Clean Architecture**: Production-ready codebase with no unnecessary files
 
 ## Features
 
-- **Three-Screen System**: Entrance Kiosk, Exit Counter, and Admin Dashboard
+- **Single Page Application**: Smooth navigation without page reloads
+- **Navigation Bar**: Easy switching between all pages
 - **Real-time Slot Management**: 8 parking slots (4 Ground + 4 First Floor)
 - **Color-coded Interface**: Green (available) and Red (occupied) slots
 - **PDF Ticket Generation**: Professional tickets with all details
@@ -37,7 +44,7 @@ A full-stack web application that automates the complete lifecycle of parking �
 
 - **Frontend**: React.js with Hooks (useReducer, useEffect, useContext)
 - **Styling**: Tailwind CSS
-- **Routing**: React Router v6
+- **Routing**: React Router v6 (SPA navigation)
 - **PDF Generation**: jsPDF
 - **State Management**: React Context API + useReducer + localStorage
 - **Deployment**: Vercel (Free Tier)
@@ -45,20 +52,39 @@ A full-stack web application that automates the complete lifecycle of parking �
 ## Project Structure
 
 ```
-src/
-  App.jsx                  ← Routing setup with ParkingProvider
-  context/
-    ParkingContext.jsx     ← Global state management (useReducer pattern)
-  pages/
-    EntranceKiosk.jsx      ← Driver booking interface (route: /)
-    ExitCounter.jsx       ← Staff exit processing (route: /exit)
-    AdminDashboard.jsx    ← Management analytics (route: /admin)
-  components/
-    SlotCard.jsx          ← Individual slot component
-    BookingModal.jsx      ← Vehicle registration modal
-  utils/
-    billing.js            ← Billing calculation utilities
-    pdfGenerator.js       ← PDF ticket generation
+smart-parking/
+├── 📄 package.json
+├── 📄 package-lock.json
+├── 📄 README.md
+├── 📄 .gitignore
+├── 📄 tailwind.config.js
+├── 📄 postcss.config.js
+├── 📄 vercel.json
+├── 📁 public/
+│   ├── 📄 favicon.ico
+│   ├── 📄 index.html
+│   ├── 📄 logo192.png
+│   ├── 📄 logo512.png
+│   ├── 📄 manifest.json
+│   └── 📄 robots.txt
+├── 📁 src/
+│   ├── 📄 App.js                    ← Main app with routing and navigation
+│   ├── 📄 index.js                  ← Entry point
+│   ├── 📄 index.css                 ← Global styles
+│   ├── 📁 components/
+│   │   ├── 📄 Navigation.jsx        ← Navigation bar component
+│   │   ├── 📄 BookingModal.jsx      ← Vehicle registration modal
+│   │   └── 📄 SlotCard.jsx          ← Individual slot component
+│   ├── 📁 context/
+│   │   └── 📄 ParkingContext.jsx    ← Global state management
+│   ├── 📁 pages/
+│   │   ├── 📄 EntranceKiosk.jsx     ← Driver booking (route: /)
+│   │   ├── 📄 ExitCounter.jsx       ← Staff exit processing (route: /exit)
+│   │   └── 📄 AdminDashboard.jsx    ← Management analytics (route: /admin)
+│   └── 📁 utils/
+│       ├── 📄 billing.js            ← Billing calculation utilities
+│       └── 📄 pdfGenerator.js       ← PDF ticket generation
+└── 📁 build/ (generated on build)
 ```
 
 ## Getting Started
@@ -71,7 +97,7 @@ src/
 
 1. Clone the repository
 ```bash
-git clone <repository-url>
+git clone https://github.com/nanda6912/smart-parking.git
 cd smart-parking
 ```
 
@@ -95,6 +121,13 @@ The application will open at http://localhost:3000
 - `npm run eject` - Ejects from Create React App (one-way operation)
 
 ## Application Usage
+
+### Navigation
+The application features a navigation bar on all pages with:
+- **🅿️ SmartPark** - Returns to entrance page
+- **🚗 Entrance** - Driver booking interface
+- **🚪 Exit** - Staff exit processing
+- **📊 Admin** - Management analytics
 
 ### Entrance Kiosk (/) - Driver-Facing
 - **Purpose**: Vehicle entry and slot booking
@@ -143,6 +176,7 @@ Formula: `Math.ceil(durationMinutes / 60) * 20` (minimum ₹20)
 ```javascript
 <ParkingProvider>
   <Router>
+    <Navigation />
     <Routes>
       <Route path="/" element={<EntranceKiosk />} />
       <Route path="/exit" element={<ExitCounter />} />
@@ -172,6 +206,11 @@ Formula: `Math.ceil(durationMinutes / 60) * 20` (minimum ₹20)
 4. Vercel will auto-detect React and configure settings
 5. Click "Deploy" - your app will be live in ~60 seconds
 
+### vercel.json Configuration
+```json
+{"rewrites": [{"source": "/(.*)", "destination": "/index.html"}]}
+```
+
 ### Manual Deployment
 
 ```bash
@@ -197,6 +236,7 @@ Data persists across page refreshes and browser sessions with proper error handl
 - **Revenue NaN Values**: Fixed billing calculations with proper error handling
 - **State Persistence**: Resolved GlobalState singleton issues
 - **Auto-Refresh**: Implemented automatic page updates for staff pages
+- **SPA Routing**: Fixed vercel.json to handle all routes properly
 
 ### 🔧 Technical Improvements
 - Replaced GlobalState singleton with useReducer pattern
@@ -204,6 +244,8 @@ Data persists across page refreshes and browser sessions with proper error handl
 - Implemented NaN protection in all statistical calculations
 - Removed debug code for production optimization
 - Added automatic refresh functionality for better UX
+- Converted to Single Page Application with smooth navigation
+- Cleaned up project structure removing unnecessary files
 
 ## Future Enhancements
 
@@ -243,6 +285,6 @@ This project is licensed under the MIT License.
 
 ---
 
-**SmartPark** - Built with React.js • Real-time Synchronization • Auto-Refresh • Production Ready
+**SmartPark** - Built with React.js • Single Page Application • Real-time Synchronization • Production Ready
 
-*Last Updated: February 2026 - Version 2.0 with Real-time Updates and Auto-Refresh*
+*Last Updated: February 2026 - Version 3.0 with SPA Architecture and Clean Project Structure*
