@@ -123,18 +123,6 @@ const EntranceKiosk = () => {
             </div>
           </section>
         </div>
-
-        {/* Legend */}
-        <div className="mt-12 flex justify-center space-x-8 text-sm">
-          <div className="flex items-center space-x-2">
-            <div className="w-6 h-6 bg-green-500 rounded"></div>
-            <span className="text-gray-400">Available</span>
-          </div>
-          <div className="flex items-center space-x-2">
-            <div className="w-6 h-6 bg-red-500 rounded"></div>
-            <span className="text-gray-400">Occupied</span>
-          </div>
-        </div>
       </div>
 
       {/* Booking Modal */}

@@ -2,8 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { ParkingProvider } from './context/ParkingContext';
 import EntranceKiosk from './pages/EntranceKiosk';
-import ExitCounter from './pages/ExitCounter';
-import AdminDashboard from './pages/AdminDashboard';
+import ExitAdminPanel from './pages/ExitAdminPanel';
 import './index.css';
 
 function App() {
@@ -13,8 +12,7 @@ function App() {
         <div className="App">
           <Routes>
             <Route path="/" element={<EntranceKiosk />} />
-            <Route path="/exit" element={<ExitCounter />} />
-            <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/panel" element={<ExitAdminPanel />} />
           </Routes>
         </div>
       </ParkingProvider>
