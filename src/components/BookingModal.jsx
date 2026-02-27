@@ -45,11 +45,21 @@ const BookingModal = ({ isOpen, onClose, onSubmit, selectedSlot }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div 
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="booking-modal-title"
+      aria-describedby="booking-modal-description"
+    >
       <div className="bg-gray-800 rounded-lg p-8 max-w-md w-full mx-4 shadow-2xl">
-        <h2 className="text-2xl font-bold text-white mb-6 text-center">
+        <h2 id="booking-modal-title" className="text-2xl font-bold text-white mb-6 text-center">
           Book Slot {selectedSlot?.label}
         </h2>
+        
+        <p id="booking-modal-description" className="text-sm text-gray-400 mb-6 text-center">
+          Enter vehicle details to generate parking ticket for slot {selectedSlot?.label}
+        </p>
         
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
