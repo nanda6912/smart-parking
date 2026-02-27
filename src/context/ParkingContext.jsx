@@ -2,6 +2,9 @@ import React, { createContext, useContext, useReducer, useEffect } from 'react';
 import { generateSlots } from '../utils/slotGenerator';
 
 const initialSlots = generateSlots();
+console.log('Generated slots:', initialSlots.length);
+console.log('Ground floor slots:', initialSlots.filter(s => s.floor === 'ground').length);
+console.log('First floor slots:', initialSlots.filter(s => s.floor === 'first').length);
 
 const loadFromStorage = () => {
   try {

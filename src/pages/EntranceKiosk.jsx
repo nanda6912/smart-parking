@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useParking } from '../context/ParkingContext';
 import SlotCard from '../components/SlotCard';
 import BookingModal from '../components/BookingModal';
@@ -15,6 +15,15 @@ const EntranceKiosk = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [showOccupiedOnly, setShowOccupiedOnly] = useState(false);
+
+  // Clear old cache if we have 8 slots (old version)
+  useEffect(() => {
+    if (slots.length === 8) {
+      console.log('Detected old 8-slot cache, clearing localStorage...');
+      localStorage.removeItem('parkingState');
+      window.location.reload();
+    }
+  }, [slots]);
 
   // Filter slots based on selected floor and search
   const filteredSlots = useMemo(() => {
