@@ -1,15 +1,7 @@
 import React, { createContext, useContext, useReducer, useEffect } from 'react';
+import { generateSlots } from '../utils/slotGenerator';
 
-const initialSlots = [
-  { slotId: 'G1', label: 'G1', floor: 'ground', status: 'empty', ticketId: null, vehicleNumber: null, phone: null, entryTime: null },
-  { slotId: 'G2', label: 'G2', floor: 'ground', status: 'empty', ticketId: null, vehicleNumber: null, phone: null, entryTime: null },
-  { slotId: 'G3', label: 'G3', floor: 'ground', status: 'empty', ticketId: null, vehicleNumber: null, phone: null, entryTime: null },
-  { slotId: 'G4', label: 'G4', floor: 'ground', status: 'empty', ticketId: null, vehicleNumber: null, phone: null, entryTime: null },
-  { slotId: 'F1', label: 'F1', floor: 'first', status: 'empty', ticketId: null, vehicleNumber: null, phone: null, entryTime: null },
-  { slotId: 'F2', label: 'F2', floor: 'first', status: 'empty', ticketId: null, vehicleNumber: null, phone: null, entryTime: null },
-  { slotId: 'F3', label: 'F3', floor: 'first', status: 'empty', ticketId: null, vehicleNumber: null, phone: null, entryTime: null },
-  { slotId: 'F4', label: 'F4', floor: 'first', status: 'empty', ticketId: null, vehicleNumber: null, phone: null, entryTime: null },
-];
+const initialSlots = generateSlots();
 
 const loadFromStorage = () => {
   try {

@@ -1,10 +1,35 @@
 import React from 'react';
 
-const SlotCard = ({ slot, onClick, disabled }) => {
+const SlotCard = ({ slot, onClick, disabled, compact = false }) => {
   const isEmpty = slot.status === 'empty';
   const bgColor = isEmpty ? 'bg-green-500 hover:bg-green-600' : 'bg-red-500';
   const cursor = isEmpty ? 'cursor-pointer' : 'cursor-not-allowed';
   const transition = 'transition-all duration-300 ease-in-out transform';
+
+  if (compact) {
+    return (
+      <div
+        onClick={() => isEmpty && onClick(slot)}
+        className={`
+          ${bgColor} ${cursor} ${transition}
+          relative w-12 h-12 rounded shadow-md
+          flex flex-col items-center justify-center
+          text-white font-bold text-xs
+          ${isEmpty ? 'hover:scale-110' : ''}
+          ${disabled ? 'opacity-75' : ''}
+        `}
+        title={`${slot.label} - ${slot.floor === 'ground' ? 'Ground Floor' : 'First Floor'} - ${isEmpty ? 'Available' : 'Occupied'}`}
+      >
+        <div className="text-center">
+          <div className="text-xs font-bold">{slot.label}</div>
+        </div>
+        
+        {!isEmpty && (
+          <div className="absolute -top-1 -right-1 w-3 h-3 bg-yellow-400 rounded-full border-2 border-gray-900"></div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div
