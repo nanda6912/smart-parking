@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParking } from '../context/ParkingContext';
 import { calculateBilling, formatDuration, formatCurrency } from '../utils/billing';
-import { printExitReceipt, printBatchReceipts } from '../utils/thermalPrinter';
+import { printExitReceipt } from '../utils/thermalPrinter';
 import RecentVehicles from '../components/RecentVehicles';
 
 const ExitCounter = () => {

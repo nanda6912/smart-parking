@@ -4,18 +4,7 @@ import { useParking } from '../context/ParkingContext';
 const BatchOperations = () => {
   const { slots, releaseSlot } = useParking();
   const [selectedSlots, setSelectedSlots] = useState(new Set());
-  const [operationMode, setOperationMode] = useState('select'); // select, release, reserve
   const [showBatchPanel, setShowBatchPanel] = useState(false);
-
-  const handleSlotSelection = (slotId) => {
-    const newSelection = new Set(selectedSlots);
-    if (newSelection.has(slotId)) {
-      newSelection.delete(slotId);
-    } else {
-      newSelection.add(slotId);
-    }
-    setSelectedSlots(newSelection);
-  };
 
   const handleSelectAll = (floor = null) => {
     const floorSlots = floor 

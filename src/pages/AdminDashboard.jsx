@@ -100,12 +100,6 @@ const AdminDashboard = () => {
     return Math.round((occupiedSlots / slots.length) * 100);
   };
 
-  const getRecentActivity = () => {
-    return tickets
-      .sort((a, b) => new Date(b.entryTime) - new Date(a.entryTime))
-      .slice(0, 10);
-  };
-
   return (
     <div className="min-h-screen bg-gray-900 text-white p-8">
       <div className="max-w-7xl mx-auto">

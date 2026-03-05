@@ -163,26 +163,7 @@ export const exportRevenueReport = (tickets, period = 'today') => {
 // Export occupancy report
 export const exportOccupancyReport = (slots, tickets, period = 'today') => {
   const now = new Date();
-  let startDate, endDate;
   
-  switch (period) {
-    case 'today':
-      startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-      endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
-      break;
-    case 'week':
-      startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-      endDate = now;
-      break;
-    case 'month':
-      startDate = new Date(now.getFullYear(), now.getMonth(), 1);
-      endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-      break;
-    default:
-      startDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-      endDate = now;
-  }
-
   // Calculate hourly occupancy
   const hourlyData = {};
   for (let hour = 0; hour < 24; hour++) {
