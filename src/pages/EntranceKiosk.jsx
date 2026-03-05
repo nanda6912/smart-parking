@@ -3,6 +3,7 @@ import { useParking } from '../context/ParkingContext';
 import SlotCard from '../components/SlotCard';
 import BookingModal from '../components/BookingModal';
 import { generateTicketPDF } from '../utils/pdfGenerator';
+import { printEntryTicket } from '../utils/thermalPrinter';
 
 const ITEMS_PER_PAGE = 50;
 
@@ -16,10 +17,10 @@ const EntranceKiosk = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [showOccupiedOnly, setShowOccupiedOnly] = useState(false);
 
-  // Clear old cache if we have 8 slots (old version)
+  // Clear old cache if we have 600 slots (old version)
   useEffect(() => {
-    if (slots.length === 8) {
-      console.log('Detected old 8-slot cache, clearing localStorage...');
+    if (slots.length === 600) {
+      console.log('Detected old 600-slot cache, clearing localStorage...');
       localStorage.removeItem('parkingState');
       window.location.reload();
     }
@@ -28,18 +29,18 @@ const EntranceKiosk = () => {
   // Filter slots based on selected floor and search
   const filteredSlots = useMemo(() => {
     let filtered = slots.filter(slot => slot.floor === selectedFloor);
-    
+
     if (searchTerm) {
-      filtered = filtered.filter(slot => 
+      filtered = filtered.filter(slot =>
         slot.slotId.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (slot.vehicleNumber && slot.vehicleNumber.toLowerCase().includes(searchTerm.toLowerCase()))
       );
     }
-    
+
     if (showOccupiedOnly) {
       filtered = filtered.filter(slot => slot.status === 'occupied');
     }
-    
+
     return filtered;
   }, [slots, selectedFloor, searchTerm, showOccupiedOnly]);
 
@@ -52,7 +53,7 @@ const EntranceKiosk = () => {
   const stats = useMemo(() => {
     const groundSlots = slots.filter(s => s.floor === 'ground');
     const firstSlots = slots.filter(s => s.floor === 'first');
-    
+
     return {
       ground: {
         total: groundSlots.length,
@@ -82,7 +83,7 @@ const EntranceKiosk = () => {
   const handleBookingSubmit = async (vehicleNumber, phone) => {
     try {
       const { ticketId, entryTime } = bookSlot(selectedSlot.slotId, vehicleNumber, phone);
-      
+
       const ticketData = {
         ticketId,
         vehicleNumber,
@@ -90,14 +91,15 @@ const EntranceKiosk = () => {
         slotId: selectedSlot.slotId,
         entryTime,
       };
-      
+
       setCurrentTicket(ticketData);
       setIsModalOpen(false);
       setSelectedSlot(null);
-      
-      // Auto-generate PDF after a short delay
+
+      // Auto-generate PDF and print thermal receipt after a short delay
       setTimeout(() => {
         generateTicketPDF(ticketData);
+        printEntryTicket(ticketData);
       }, 1000);
     } catch (error) {
       console.error('Error booking slot:', error);
@@ -130,7 +132,7 @@ const EntranceKiosk = () => {
         {/* Header */}
         <header className="text-center mb-8">
           <h1 className="text-4xl font-bold mb-4 text-green-400">🅿️ SmartPark</h1>
-          <h2 className="text-xl text-gray-300">Parking Management System - 600 Slots</h2>
+          <h2 className="text-xl text-gray-300">Parking Management System - 200 Slots</h2>
           <p className="text-gray-400 mt-2">Select an available slot to begin parking</p>
         </header>
 
@@ -194,21 +196,19 @@ const EntranceKiosk = () => {
             <div className="flex space-x-4 mb-4 md:mb-0">
               <button
                 onClick={() => handleFloorChange('ground')}
-                className={`px-6 py-3 rounded-lg font-medium transition-colors ${
-                  selectedFloor === 'ground'
+                className={`px-6 py-3 rounded-lg font-medium transition-colors ${selectedFloor === 'ground'
                     ? 'bg-blue-600 text-white'
                     : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                }`}
+                  }`}
               >
                 🏢 Ground Floor ({stats.ground.available}/{stats.ground.total})
               </button>
               <button
                 onClick={() => handleFloorChange('first')}
-                className={`px-6 py-3 rounded-lg font-medium transition-colors ${
-                  selectedFloor === 'first'
+                className={`px-6 py-3 rounded-lg font-medium transition-colors ${selectedFloor === 'first'
                     ? 'bg-purple-600 text-white'
                     : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                }`}
+                  }`}
               >
                 🏢 First Floor ({stats.first.available}/{stats.first.total})
               </button>
@@ -249,7 +249,7 @@ const EntranceKiosk = () => {
           <h2 className="text-2xl font-bold mb-6 text-center capitalize">
             {selectedFloor} Floor Slots
           </h2>
-          
+
           {paginatedSlots.length === 0 ? (
             <div className="text-center py-12">
               <div className="text-gray-400 text-lg">
@@ -280,7 +280,7 @@ const EntranceKiosk = () => {
                   >
                     Previous
                   </button>
-                  
+
                   <div className="flex space-x-1">
                     {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                       let pageNum;
@@ -293,23 +293,22 @@ const EntranceKiosk = () => {
                       } else {
                         pageNum = currentPage - 2 + i;
                       }
-                      
+
                       return (
                         <button
                           key={pageNum}
                           onClick={() => handlePageChange(pageNum)}
-                          className={`px-3 py-1 rounded ${
-                            currentPage === pageNum
+                          className={`px-3 py-1 rounded ${currentPage === pageNum
                               ? 'bg-green-600 text-white'
                               : 'bg-gray-700 text-white hover:bg-gray-600'
-                          }`}
+                            }`}
                         >
                           {pageNum}
                         </button>
                       );
                     })}
                   </div>
-                  
+
                   <button
                     onClick={() => handlePageChange(currentPage + 1)}
                     disabled={currentPage === totalPages}

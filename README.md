@@ -1,6 +1,8 @@
-# 🅿️ SmartPark - Parking Management System
+# 🅿️ SmartPark - Parking Management System - 200 Slots
 
 A modern Single Page Application (SPA) that automates the complete lifecycle of parking — from slot selection at entry to billing and slot release at exit. Features real-time synchronization, smooth navigation, and automatic refresh capabilities.
+
+**Current Version: 0.1.1** • **Last Updated: March 2026**
 
 ## ✨ Latest Features & Updates
 
@@ -31,7 +33,7 @@ A modern Single Page Application (SPA) that automates the complete lifecycle of 
 
 - **Single Page Application**: Smooth navigation without page reloads
 - **Navigation Bar**: Easy switching between all pages
-- **Real-time Slot Management**: 8 parking slots (4 Ground + 4 First Floor)
+- **Real-time Slot Management**: 200 parking slots (100 Ground + 100 First Floor) 
 - **Color-coded Interface**: Green (available) and Red (occupied) slots
 - **PDF Ticket Generation**: Professional tickets with all details
 - **Automated Billing**: ₹20/hour with ceiling calculation
@@ -42,24 +44,28 @@ A modern Single Page Application (SPA) that automates the complete lifecycle of 
 
 ## Technology Stack
 
-- **Frontend**: React.js with Hooks (useReducer, useEffect, useContext)
-- **Styling**: Tailwind CSS
-- **Routing**: React Router v6 (SPA navigation)
-- **PDF Generation**: jsPDF
+- **Frontend**: React.js 19.2.4 with Hooks (useReducer, useEffect, useContext)
+- **Styling**: Tailwind CSS 3.4.0
+- **Routing**: React Router DOM 7.13.1 (SPA navigation)
+- **PDF Generation**: jsPDF 4.2.0
 - **State Management**: React Context API + useReducer + localStorage
+- **Build Tool**: Create React App 5.0.1
+- **Testing**: React Testing Library 16.3.2
 - **Deployment**: Vercel (Free Tier)
 
 ## Project Structure
 
 ```
 smart-parking/
-├── 📄 package.json
-├── 📄 package-lock.json
-├── 📄 README.md
-├── 📄 .gitignore
-├── 📄 tailwind.config.js
-├── 📄 postcss.config.js
-├── 📄 vercel.json
+├── 📄 package.json                 ← Dependencies and scripts (v0.1.1)
+├── 📄 package-lock.json           ← Locked dependency versions
+├── 📄 README.md                   ← Project documentation
+├── 📄 .gitignore                  ← Git ignore rules
+├── 📄 tailwind.config.js          ← Tailwind CSS configuration
+├── 📄 postcss.config.js           ← PostCSS configuration
+├── 📄 vercel.json                 ← Vercel deployment settings
+├── 📄 cleanup-for-deploy.sh       ← Deployment cleanup script
+├── 📄 remove-cicd.sh              ← CI/CD removal script
 ├── 📁 public/
 │   ├── 📄 favicon.ico
 │   ├── 📄 index.html
@@ -68,22 +74,23 @@ smart-parking/
 │   ├── 📄 manifest.json
 │   └── 📄 robots.txt
 ├── 📁 src/
-│   ├── 📄 App.js                    ← Main app with routing and navigation
-│   ├── 📄 index.js                  ← Entry point
-│   ├── 📄 index.css                 ← Global styles
+│   ├── 📄 App.js                  ← Main app with routing and navigation
+│   ├── 📄 index.js                ← Entry point
+│   ├── 📄 index.css               ← Global styles
 │   ├── 📁 components/
-│   │   ├── 📄 Navigation.jsx        ← Navigation bar component
-│   │   ├── 📄 BookingModal.jsx      ← Vehicle registration modal
-│   │   └── 📄 SlotCard.jsx          ← Individual slot component
+│   │   ├── 📄 Navigation.jsx      ← Navigation bar component
+│   │   ├── 📄 BookingModal.jsx    ← Vehicle registration modal
+│   │   └── 📄 SlotCard.jsx        ← Individual slot component
 │   ├── 📁 context/
-│   │   └── 📄 ParkingContext.jsx    ← Global state management
+│   │   └── 📄 ParkingContext.jsx  ← Global state management
 │   ├── 📁 pages/
-│   │   ├── 📄 EntranceKiosk.jsx     ← Driver booking (route: /)
-│   │   ├── 📄 ExitCounter.jsx       ← Staff exit processing (route: /exit)
-│   │   └── 📄 AdminDashboard.jsx    ← Management analytics (route: /admin)
+│   │   ├── 📄 EntranceKiosk.jsx   ← Driver booking (route: /)
+│   │   ├── 📄 ExitCounter.jsx     ← Staff exit processing (route: /exit)
+│   │   └── 📄 AdminDashboard.jsx  ← Management analytics (route: /admin)
 │   └── 📁 utils/
-│       ├── 📄 billing.js            ← Billing calculation utilities
-│       └── 📄 pdfGenerator.js       ← PDF ticket generation
+│       ├── 📄 billing.js          ← Billing calculation utilities
+│       ├── 📄 pdfGenerator.js     ← PDF ticket generation
+│       └── 📄 slotGenerator.js    ← Slot generation utilities
 └── 📁 build/ (generated on build)
 ```
 
@@ -92,6 +99,7 @@ smart-parking/
 ### Prerequisites
 - Node.js (v14 or higher)
 - npm or yarn
+- Modern web browser (Chrome, Firefox, Safari, Edge)
 
 ### Installation
 
@@ -115,19 +123,28 @@ The application will open at http://localhost:3000
 
 ### Available Scripts
 
-- `npm start` - Runs the app in development mode
-- `npm run build` - Builds the app for production
-- `npm test` - Launches the test runner
+- `npm start` - Runs the app in development mode at http://localhost:3000
+- `npm run build` - Builds the app for production (outputs to /build folder)
+- `npm test` - Launches the test runner in interactive watch mode
 - `npm run eject` - Ejects from Create React App (one-way operation)
+
+### Development Notes
+
+- The app uses **localStorage** for data persistence - no backend required
+- **Auto-refresh** functionality works across browser tabs
+- **PDF generation** happens client-side using jsPDF
+- **State management** uses React Context with useReducer pattern
+- **Routing** is handled client-side with React Router DOM
 
 ## Application Usage
 
 ### Navigation
-The application features a navigation bar on all pages with:
-- **🅿️ SmartPark** - Returns to entrance page
-- **🚗 Entrance** - Driver booking interface
-- **🚪 Exit** - Staff exit processing
-- **📊 Admin** - Management analytics
+The application features a responsive navigation bar on all pages with:
+- **🅿️ SmartPark** - Returns to entrance page (brand logo)
+- **🚗 Entrance** - Driver booking interface (default route: /)
+- **🚪 Exit** - Staff exit processing (route: /exit)
+- **📊 Admin** - Management analytics (route: /admin)
+- **Slot Counter** - Displays "200 Slots • 100 per floor" in navigation
 
 ### Entrance Kiosk (/) - Driver-Facing
 - **Purpose**: Vehicle entry and slot booking
@@ -285,6 +302,6 @@ This project is licensed under the MIT License.
 
 ---
 
-**SmartPark** - Built with React.js • Single Page Application • Real-time Synchronization • Production Ready
+**SmartPark** - Built with React.js 19.2.4 • Single Page Application • Real-time Synchronization • Production Ready
 
-*Last Updated: February 2026 - Version 3.0 with SPA Architecture and Clean Project Structure*
+*Version 0.1.1 • Last Updated: March 2026 • Repository: https://github.com/nanda6912/smart-parking*

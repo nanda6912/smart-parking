@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useParking } from '../context/ParkingContext';
 import { calculateBilling, formatDuration, formatCurrency } from '../utils/billing';
+import { printExitReceipt, printBatchReceipts } from '../utils/thermalPrinter';
+import RecentVehicles from '../components/RecentVehicles';
 
 const ExitCounter = () => {
   const { getTicket, releaseSlot, tickets } = useParking();
@@ -97,6 +99,9 @@ const ExitCounter = () => {
       const updatedTicket = releaseSlot(searchResult.ticketId);
       
       if (updatedTicket) {
+        // Print thermal receipt
+        printExitReceipt(searchResult, billingInfo.exitTime);
+        
         setSearchResult({ ...searchResult, status: 'COMPLETED', exitTime: billingInfo.exitTime });
         setIsProcessing(false);
       }
@@ -407,6 +412,13 @@ const ExitCounter = () => {
                 New Search
               </button>
             </div>
+          </div>
+        )}
+
+        {/* Recent Vehicles Section */}
+        {!searchResult && (
+          <div className="mt-8">
+            <RecentVehicles limit={10} showCompleted={false} />
           </div>
         )}
       </div>

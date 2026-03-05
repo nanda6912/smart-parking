@@ -78,8 +78,8 @@ export const ParkingProvider = ({ children }) => {
 
   const generateTicketId = () => {
     const d = new Date();
-    const date = d.toISOString().slice(0,10).replace(/-/g,'');
-    const rand = Math.floor(Math.random() * 10000).toString().padStart(4,'0');
+    const date = d.toISOString().slice(0, 10).replace(/-/g, '');
+    const rand = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
     return `TKT-${date}-${rand}`;
   };
 

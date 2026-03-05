@@ -1,9 +1,9 @@
-// Generate 300 slots for each floor (600 total)
+// Generate 100 slots for each floor (200 total)
 export const generateSlots = () => {
   const slots = [];
-  
-  // Generate Ground Floor slots (G1-G300)
-  for (let i = 1; i <= 300; i++) {
+
+  // Generate Ground Floor slots (G1-G100)
+  for (let i = 1; i <= 100; i++) {
     slots.push({
       slotId: `G${i}`,
       label: `G${i}`,
@@ -15,9 +15,9 @@ export const generateSlots = () => {
       entryTime: null,
     });
   }
-  
-  // Generate First Floor slots (F1-F300)
-  for (let i = 1; i <= 300; i++) {
+
+  // Generate First Floor slots (F1-F100)
+  for (let i = 1; i <= 100; i++) {
     slots.push({
       slotId: `F${i}`,
       label: `F${i}`,
@@ -29,7 +29,7 @@ export const generateSlots = () => {
       entryTime: null,
     });
   }
-  
+
   return slots;
 };
 
@@ -42,7 +42,7 @@ export const getSlotStats = () => {
   const allSlots = generateSlots();
   const groundSlots = allSlots.filter(s => s.floor === 'ground');
   const firstSlots = allSlots.filter(s => s.floor === 'first');
-  
+
   return {
     total: allSlots.length,
     ground: groundSlots.length,
