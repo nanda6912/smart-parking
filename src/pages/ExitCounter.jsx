@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useParking } from '../context/ParkingContext';
+import { useToast } from '../components/ToastContainer';
 import { calculateBilling, formatDuration, formatCurrency } from '../utils/billing';
-import { printExitReceipt } from '../utils/thermalPrinter';
 import RecentVehicles from '../components/RecentVehicles';
+import SkeletonLoader from '../components/SkeletonLoader';
+import { exportTicketsToCSV, generateDailyReport } from '../utils/exportData';
 
 const ExitCounter = () => {
-  const { getTicket, releaseSlot, tickets } = useParking();
+  const { getTicket, releaseSlot, tickets, slots, loading, setLoading } = useParking();
+  const { showSuccess, showError, showInfo } = useToast();
   const [ticketId, setTicketId] = useState('');
   const [searchResult, setSearchResult] = useState(null);
   const [billingInfo, setBillingInfo] = useState(null);
@@ -60,34 +63,38 @@ const ExitCounter = () => {
     e.preventDefault();
     setError('');
     setSearchResult(null);
-    setBillingInfo(null);
-
+    
     if (!ticketId.trim()) {
-      setError('Please enter a Ticket ID');
+      showError('Please enter a ticket ID');
       return;
     }
 
     const ticket = getTicket(ticketId.trim());
-    
     if (!ticket) {
       setError('Ticket not found');
+      setSearchResult(null);
+      setBillingInfo(null);
+      showError('Ticket not found');
       return;
     }
 
-    if (ticket.status !== 'ACTIVE') {
-      setError('Ticket already used or completed');
+    if (ticket.status === 'COMPLETED') {
+      setError('This ticket has already been processed');
+      setSearchResult(null);
+      setBillingInfo(null);
+      showInfo('This ticket has already been processed');
       return;
     }
 
     setSearchResult(ticket);
-    
-    // Calculate billing
     const exitTime = new Date();
     const billing = calculateBilling(ticket.entryTime, exitTime);
     setBillingInfo({
       ...billing,
       exitTime,
     });
+    setError('');
+    showSuccess('Ticket found!');
   };
 
   const handleConfirmExit = () => {
@@ -99,9 +106,6 @@ const ExitCounter = () => {
       const updatedTicket = releaseSlot(searchResult.ticketId);
       
       if (updatedTicket) {
-        // Print thermal receipt
-        printExitReceipt(searchResult, billingInfo.exitTime);
-        
         setSearchResult({ ...searchResult, status: 'COMPLETED', exitTime: billingInfo.exitTime });
         setIsProcessing(false);
       }
@@ -118,6 +122,43 @@ const ExitCounter = () => {
     setBillingInfo(null);
     setError('');
     setIsProcessing(false);
+  };
+
+  const handleVehicleSelect = (ticket) => {
+    setTicketId(ticket.ticketId);
+    setSearchResult(ticket);
+    const exitTime = new Date();
+    const billing = calculateBilling(ticket.entryTime, exitTime);
+    setBillingInfo({
+      ...billing,
+      exitTime,
+    });
+    setError('');
+    showSuccess(`Selected ticket: ${ticket.ticketId}`);
+  };
+
+  const handleExportData = (type) => {
+    try {
+      switch (type) {
+        case 'today':
+          exportTicketsToCSV(tickets, 'today');
+          showSuccess('Today\'s tickets exported successfully');
+          break;
+        case 'week':
+          exportTicketsToCSV(tickets, 'week');
+          showSuccess('Weekly tickets exported successfully');
+          break;
+        case 'daily':
+          generateDailyReport(slots, tickets);
+          showSuccess('Daily report generated successfully');
+          break;
+        default:
+          showError('Invalid export type');
+      }
+    } catch (error) {
+      console.error('Export error:', error);
+      showError('Failed to export data');
+    }
   };
 
   return (
@@ -190,11 +231,15 @@ const ExitCounter = () => {
                         <div className="grid grid-cols-3 gap-4 mb-4">
                           <div>
                             <span className="text-xs text-gray-400 block">Vehicle</span>
-                            <p className="text-white font-medium">{ticket.vehicleNumber}</p>
+                            <p className="text-white font-medium">
+                              {ticket.vehicle?.number || ticket.vehicleNumber || 'Unknown'}
+                            </p>
                           </div>
                           <div>
                             <span className="text-xs text-gray-400 block">Phone</span>
-                            <p className="text-white font-medium">{ticket.phone}</p>
+                            <p className="text-white font-medium">
+                              {ticket.vehicle?.phone || ticket.phone || 'Unknown'}
+                            </p>
                           </div>
                           <div>
                             <span className="text-xs text-gray-400 block">Entry Time</span>
@@ -414,13 +459,40 @@ const ExitCounter = () => {
             </div>
           </div>
         )}
-
-        {/* Recent Vehicles Section */}
-        {!searchResult && (
-          <div className="mt-8">
-            <RecentVehicles limit={10} showCompleted={false} />
+        
+        {/* Recent Vehicles Sidebar */}
+        <div className="mt-8">
+          <RecentVehicles 
+            tickets={tickets} 
+            onVehicleSelect={handleVehicleSelect}
+            className="max-w-md"
+          />
+        </div>
+        
+        {/* Export Options */}
+        <div className="mt-8 bg-gray-800 rounded-lg p-6">
+          <h3 className="text-xl font-bold mb-4 text-orange-400">📊 Export Data</h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <button
+              onClick={() => handleExportData('today')}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              Export Today's Tickets
+            </button>
+            <button
+              onClick={() => handleExportData('week')}
+              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+            >
+              Export Weekly Report
+            </button>
+            <button
+              onClick={() => handleExportData('daily')}
+              className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+            >
+              Generate Daily Report
+            </button>
           </div>
-        )}
+        </div>
       </div>
     </div>
   );

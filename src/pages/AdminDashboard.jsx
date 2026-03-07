@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useParking } from '../context/ParkingContext';
+import { useToast } from '../components/ToastContainer';
 import { calculateBilling, formatDuration, formatCurrency } from '../utils/billing';
-import { exportAllReports, exportRevenueReport, exportOccupancyReport } from '../utils/exportData';
-import RecentVehicles from '../components/RecentVehicles';
+import BatchOperations from '../components/BatchOperations';
+import SkeletonLoader from '../components/SkeletonLoader';
+import { exportTicketsToCSV, exportSlotsToCSV, exportRevenueReport, generateDailyReport } from '../utils/exportData';
 
 const AdminDashboard = () => {
-  const { tickets, slots } = useParking();
+  const { tickets, slots, selectedSlots, clearSelection, toggleSlotSelection, batchUpdateSlots, loading, setLoading } = useParking();
+  const { showSuccess, showError, showInfo } = useToast();
   const [selectedPeriod, setSelectedPeriod] = useState('today');
   const [stats, setStats] = useState({
     totalRevenue: 0,
@@ -100,6 +103,78 @@ const AdminDashboard = () => {
     return Math.round((occupiedSlots / slots.length) * 100);
   };
 
+  const getRecentActivity = () => {
+    return tickets
+      .sort((a, b) => new Date(b.entryTime) - new Date(a.entryTime))
+      .slice(0, 10);
+  };
+
+  const handleBatchAction = async (action, slotIds) => {
+    try {
+      setLoading(true);
+      
+      switch (action) {
+        case 'release':
+          await batchUpdateSlots(slotIds, { status: 'empty', ticketId: null, vehicleNumber: null, phone: null, entryTime: null });
+          showSuccess(`Released ${slotIds.length} slot(s) successfully`);
+          break;
+        case 'reserve':
+          await batchUpdateSlots(slotIds, { status: 'reserved' });
+          showSuccess(`Reserved ${slotIds.length} slot(s) successfully`);
+          break;
+        case 'maintenance':
+          await batchUpdateSlots(slotIds, { status: 'maintenance' });
+          showSuccess(`Marked ${slotIds.length} slot(s) for maintenance`);
+          break;
+        case 'clean':
+          await batchUpdateSlots(slotIds, { status: 'empty' });
+          showSuccess(`Marked ${slotIds.length} slot(s) as cleaned`);
+          break;
+        default:
+          showError('Unknown action');
+      }
+    } catch (error) {
+      console.error('Batch action error:', error);
+      showError('Failed to perform batch action');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleExportData = (type) => {
+    try {
+      switch (type) {
+        case 'tickets':
+          exportTicketsToCSV(tickets, selectedPeriod);
+          showSuccess(`Tickets exported successfully for ${selectedPeriod}`);
+          break;
+        case 'slots':
+          exportSlotsToCSV(slots);
+          showSuccess('Slot status exported successfully');
+          break;
+        case 'revenue':
+          exportRevenueReport(tickets, selectedPeriod);
+          showSuccess(`Revenue report generated for ${selectedPeriod}`);
+          break;
+        case 'daily':
+          generateDailyReport(slots, tickets);
+          showSuccess('Daily report generated successfully');
+          break;
+        default:
+          showError('Invalid export type');
+      }
+    } catch (error) {
+      console.error('Export error:', error);
+      showError('Failed to export data');
+    }
+  };
+
+  const handleSlotClick = (slot) => {
+    if (slot.status !== 'empty') {
+      toggleSlotSelection(slot.slotId);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-900 text-white p-8">
       <div className="max-w-7xl mx-auto">
@@ -172,65 +247,112 @@ const AdminDashboard = () => {
 
         {/* Charts and Tables */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
-          {/* Recent Vehicles */}
-          <RecentVehicles limit={8} showCompleted={true} />
+          {/* Recent Activity */}
+          <div className="bg-gray-800 rounded-lg p-6 shadow-xl">
+            <h3 className="text-xl font-bold mb-6 text-blue-400">📋 Recent Activity</h3>
+            <div className="space-y-3">
+              {getRecentActivity().length === 0 ? (
+                <p className="text-gray-400 text-center py-8">No activity yet</p>
+              ) : (
+                getRecentActivity().map(ticket => (
+                  <div key={ticket.ticketId} className="bg-gray-700 rounded-lg p-4">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <p className="font-mono text-sm text-blue-400">{ticket.ticketId}</p>
+                        <p className="text-white">{ticket.vehicleNumber}</p>
+                        <p className="text-sm text-gray-400">Slot {ticket.slotId}</p>
+                      </div>
+                      <div className="text-right">
+                        <span className={`px-2 py-1 rounded text-xs font-medium ${ticket.status === 'ACTIVE'
+                            ? 'bg-green-900 text-green-300'
+                            : 'bg-gray-600 text-gray-300'
+                          }`}>
+                          {ticket.status}
+                        </span>
+                        <p className="text-xs text-gray-400 mt-1">
+                          {new Date(ticket.entryTime).toLocaleString('en-IN', {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            hour12: true
+                          })}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
 
           {/* Slot Status */}
           <div className="bg-gray-800 rounded-lg p-6 shadow-xl">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-xl font-bold text-blue-400">🅿️ Slot Status</h3>
-              <button
-                onClick={() => exportOccupancyReport(slots, tickets, selectedPeriod)}
-                className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm transition-colors"
-              >
-                📤 Export
-              </button>
-            </div>
+            <h3 className="text-xl font-bold mb-6 text-blue-400">🅿️ Slot Status</h3>
             <div className="grid grid-cols-4 gap-3">
               {slots.map(slot => (
                 <div
                   key={slot.slotId}
-                  className={`p-3 rounded-lg text-center font-bold transition-all duration-200 hover:scale-105 ${
+                  onClick={() => handleSlotClick(slot)}
+                  className={`p-3 rounded-lg text-center font-bold cursor-pointer transition-all ${
                     slot.status === 'occupied'
-                      ? 'bg-red-600 text-white cursor-pointer hover:bg-red-700'
-                      : 'bg-green-600 text-white cursor-pointer hover:bg-green-700'
+                      ? 'bg-red-600 text-white hover:bg-red-700'
+                      : slot.status === 'maintenance'
+                      ? 'bg-yellow-600 text-white hover:bg-yellow-700'
+                      : selectedSlots.includes(slot.slotId)
+                      ? 'bg-purple-600 text-white'
+                      : 'bg-green-600 text-white hover:bg-green-700'
                   }`}
-                  title={slot.status === 'occupied' ? `${slot.vehicleNumber} - ${slot.phone}` : 'Available'}
                 >
                   <div>{slot.slotId}</div>
                   <div className="text-xs mt-1">
-                    {slot.status === 'occupied' ? 'Occupied' : 'Empty'}
+                    {slot.status === 'occupied' ? 'Occupied' : 
+                     slot.status === 'maintenance' ? 'Maintenance' : 'Empty'}
                   </div>
+                  {selectedSlots.includes(slot.slotId) && (
+                    <div className="text-xs mt-1">✓ Selected</div>
+                  )}
                 </div>
               ))}
             </div>
           </div>
-        </div>
 
-        {/* Export Section */}
-        <div className="bg-gray-800 rounded-lg p-6 shadow-xl">
-          <h3 className="text-xl font-bold mb-6 text-blue-400">📊 Export Reports</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <button
-              onClick={() => exportAllReports(tickets, slots, selectedPeriod)}
-              className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium"
-            >
-              📊 Export All Reports ({selectedPeriod})
-            </button>
-            <button
-              onClick={() => exportRevenueReport(tickets, selectedPeriod)}
-              className="px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors font-medium"
-            >
-              💰 Revenue Report ({selectedPeriod})
-            </button>
-            <button
-              onClick={() => exportOccupancyReport(slots, tickets, selectedPeriod)}
-              className="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors font-medium"
-            >
-              🅿️ Occupancy Report ({selectedPeriod})
-            </button>
+          {/* Export Options */}
+          <div className="bg-gray-800 rounded-lg p-6 shadow-xl">
+            <h3 className="text-xl font-bold mb-6 text-blue-400">📊 Export Data</h3>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <button
+                onClick={() => handleExportData('tickets')}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                Export Tickets
+              </button>
+              <button
+                onClick={() => handleExportData('slots')}
+                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+              >
+                Export Slots
+              </button>
+              <button
+                onClick={() => handleExportData('revenue')}
+                className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+              >
+                Revenue Report
+              </button>
+              <button
+                onClick={() => handleExportData('daily')}
+                className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
+              >
+                Daily Report
+              </button>
+            </div>
           </div>
         </div>
+
+        {/* Batch Operations */}
+        <BatchOperations
+          selectedSlots={selectedSlots}
+          onBatchAction={handleBatchAction}
+          onClearSelection={clearSelection}
+        />
       </div>
     </div>
   );

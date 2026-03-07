@@ -1,21 +1,37 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useParking } from '../context/ParkingContext';
+import { useToast } from '../components/ToastContainer';
 import SlotCard from '../components/SlotCard';
 import BookingModal from '../components/BookingModal';
+import SlotSearchFilter from '../components/SlotSearchFilter';
+import SkeletonLoader from '../components/SkeletonLoader';
+import useKeyboardShortcuts from '../hooks/useKeyboardShortcuts';
 import { generateTicketPDF } from '../utils/pdfGenerator';
-import { printEntryTicket } from '../utils/thermalPrinter';
 
 const ITEMS_PER_PAGE = 50;
 
 const EntranceKiosk = () => {
-  const { slots, bookSlot } = useParking();
+  const { slots, bookSlot, loading, setLoading } = useParking();
+  const { showSuccess, showError } = useToast();
   const [selectedSlot, setSelectedSlot] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentTicket, setCurrentTicket] = useState(null);
-  const [selectedFloor, setSelectedFloor] = useState('ground');
-  const [searchTerm, setSearchTerm] = useState('');
+  const [filteredSlots, setFilteredSlots] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
-  const [showOccupiedOnly, setShowOccupiedOnly] = useState(false);
+
+  // Keyboard shortcuts
+  useKeyboardShortcuts({
+    'ctrl+n': () => {
+      const availableSlot = slots.find(slot => slot.status === 'empty');
+      if (availableSlot) {
+        setSelectedSlot(availableSlot);
+        setIsModalOpen(true);
+        showSuccess('Quick booking activated!');
+      } else {
+        showError('No available slots for quick booking');
+      }
+    }
+  });
 
   // Clear old cache if we have 600 slots (old version)
   useEffect(() => {
@@ -25,24 +41,6 @@ const EntranceKiosk = () => {
       window.location.reload();
     }
   }, [slots]);
-
-  // Filter slots based on selected floor and search
-  const filteredSlots = useMemo(() => {
-    let filtered = slots.filter(slot => slot.floor === selectedFloor);
-
-    if (searchTerm) {
-      filtered = filtered.filter(slot =>
-        slot.slotId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (slot.vehicleNumber && slot.vehicleNumber.toLowerCase().includes(searchTerm.toLowerCase()))
-      );
-    }
-
-    if (showOccupiedOnly) {
-      filtered = filtered.filter(slot => slot.status === 'occupied');
-    }
-
-    return filtered;
-  }, [slots, selectedFloor, searchTerm, showOccupiedOnly]);
 
   // Pagination
   const totalPages = Math.ceil(filteredSlots.length / ITEMS_PER_PAGE);
@@ -82,6 +80,7 @@ const EntranceKiosk = () => {
 
   const handleBookingSubmit = async (vehicleNumber, phone) => {
     try {
+      setLoading(true);
       const { ticketId, entryTime } = bookSlot(selectedSlot.slotId, vehicleNumber, phone);
 
       const ticketData = {
@@ -96,13 +95,17 @@ const EntranceKiosk = () => {
       setIsModalOpen(false);
       setSelectedSlot(null);
 
-      // Auto-generate PDF and print thermal receipt after a short delay
+      showSuccess(`Booking successful! Ticket ID: ${ticketId}`);
+
+      // Auto-generate PDF after a short delay
       setTimeout(() => {
         generateTicketPDF(ticketData);
-        printEntryTicket(ticketData);
       }, 1000);
     } catch (error) {
       console.error('Error booking slot:', error);
+      showError('Failed to book slot. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -111,14 +114,8 @@ const EntranceKiosk = () => {
     setSelectedSlot(null);
   };
 
-  const handleFloorChange = (floor) => {
-    setSelectedFloor(floor);
-    setCurrentPage(1);
-    setSearchTerm('');
-  };
-
-  const handleSearchChange = (e) => {
-    setSearchTerm(e.target.value);
+  const handleFilter = (filtered) => {
+    setFilteredSlots(filtered);
     setCurrentPage(1);
   };
 
@@ -189,75 +186,34 @@ const EntranceKiosk = () => {
           </div>
         )}
 
-        {/* Floor Selection and Controls */}
-        <div className="bg-gray-800 rounded-lg p-6 mb-8">
-          <div className="flex flex-col md:flex-row justify-between items-center mb-6">
-            {/* Floor Selection */}
-            <div className="flex space-x-4 mb-4 md:mb-0">
-              <button
-                onClick={() => handleFloorChange('ground')}
-                className={`px-6 py-3 rounded-lg font-medium transition-colors ${selectedFloor === 'ground'
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                  }`}
-              >
-                🏢 Ground Floor ({stats.ground.available}/{stats.ground.total})
-              </button>
-              <button
-                onClick={() => handleFloorChange('first')}
-                className={`px-6 py-3 rounded-lg font-medium transition-colors ${selectedFloor === 'first'
-                    ? 'bg-purple-600 text-white'
-                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                  }`}
-              >
-                🏢 First Floor ({stats.first.available}/{stats.first.total})
-              </button>
-            </div>
-
-            {/* Search and Filter */}
-            <div className="flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-4">
-              <input
-                type="text"
-                placeholder="Search by slot ID or vehicle number..."
-                value={searchTerm}
-                onChange={handleSearchChange}
-                className="px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500"
-              />
-              <label className="flex items-center text-sm">
-                <input
-                  type="checkbox"
-                  checked={showOccupiedOnly}
-                  onChange={(e) => {
-                    setShowOccupiedOnly(e.target.checked);
-                    setCurrentPage(1);
-                  }}
-                  className="mr-2"
-                />
-                Show occupied only
-              </label>
-            </div>
-          </div>
-
-          {/* Results Info */}
-          <div className="text-sm text-gray-400 mb-4">
-            Showing {paginatedSlots.length} of {filteredSlots.length} slots on {selectedFloor} floor
-          </div>
-        </div>
+        {/* Search and Filter */}
+        <SlotSearchFilter 
+          slots={slots} 
+          onFilter={handleFilter}
+          className="mb-8"
+        />
 
         {/* Parking Slots Grid */}
         <div className="bg-gray-800 rounded-lg p-6">
-          <h2 className="text-2xl font-bold mb-6 text-center capitalize">
-            {selectedFloor} Floor Slots
+          <h2 className="text-2xl font-bold mb-6 text-center">
+            Parking Slots
           </h2>
 
-          {paginatedSlots.length === 0 ? (
+          {loading ? (
+            <SkeletonLoader type="slot" count={20} />
+          ) : paginatedSlots.length === 0 ? (
             <div className="text-center py-12">
               <div className="text-gray-400 text-lg">
-                {searchTerm ? 'No slots found matching your search' : 'No slots available on this floor'}
+                No slots found matching your criteria
               </div>
             </div>
           ) : (
             <>
+              {/* Results Info */}
+              <div className="text-sm text-gray-400 mb-4 text-center">
+                Showing {paginatedSlots.length} of {filteredSlots.length} slots
+              </div>
+
               <div className="grid grid-cols-5 md:grid-cols-10 lg:grid-cols-15 xl:grid-cols-20 gap-3">
                 {paginatedSlots.map(slot => (
                   <SlotCard

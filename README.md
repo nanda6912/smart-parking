@@ -6,9 +6,22 @@ A modern Single Page Application (SPA) that automates the complete lifecycle of 
 
 ## ✨ Latest Features & Updates
 
+### 🔄 Enhanced User Experience
+- **Toast Notifications**: Success, error, warning, and info messages with auto-dismiss
+- **Dark Mode Toggle**: Theme switching with system preference detection and localStorage persistence
+- **Loading States**: Skeleton loaders for better perceived performance during data operations
+- **Keyboard Shortcuts**: Ctrl+N for quick booking on entrance page
+- **Real-time Search**: Advanced filtering by slot ID, floor, status, and vehicle type
+
+### 🔄 Operational Efficiency
+- **Batch Operations**: Multi-slot selection with release, reserve, maintenance, and clean actions
+- **Recent Vehicles**: Quick access to parking history with click-to-select functionality
+- **Export Data**: CSV exports for tickets, slots, revenue reports, and daily summaries
+- **Enhanced Slot Cards**: Support for multiple statuses (occupied, maintenance, reserved, selected)
+
 ### 🔄 Single Page Application
 - **SPA Architecture**: Seamless navigation without page reloads
-- **Navigation Bar**: Easy switching between Entrance, Exit, and Admin pages
+- **Navigation Bar**: Easy switching between Entrance, Exit, and Admin pages with dark mode toggle
 - **Smooth Transitions**: Modern user experience with React Router v6
 - **Consistent Interface**: Navigation available on all pages
 
@@ -19,28 +32,42 @@ A modern Single Page Application (SPA) that automates the complete lifecycle of 
 - **Cross-Page Communication**: Seamless data flow between all pages
 
 ### 🎯 Three-Page Architecture
-- **Entrance Kiosk (/)** - Driver-facing booking interface
-- **Exit Counter (/exit)** - Staff-facing exit processing with real-time updates
-- **Admin Dashboard (/admin)** - Management analytics with auto-refresh
+- **Entrance Kiosk (/)** - Driver-facing booking interface with advanced search and filtering
+- **Exit Counter (/exit)** - Staff-facing exit processing with recent vehicles and export options
+- **Admin Dashboard (/admin)** - Management analytics with batch operations and data exports
 
 ### 🔧 Technical Improvements
 - **useReducer Pattern**: Robust state management with predictable updates
 - **localStorage Integration**: Reliable data persistence with proper error handling
 - **NaN Protection**: Fixed revenue calculations and statistics
-- **Clean Architecture**: Production-ready codebase with no unnecessary files
+- **Clean Architecture**: Production-ready codebase with modular components
+- **Error Boundaries**: Enhanced error handling and user feedback
+- **Component Modularity**: Reusable components for better maintainability
 
 ## Features
 
+### Core Functionality
 - **Single Page Application**: Smooth navigation without page reloads
-- **Navigation Bar**: Easy switching between all pages
+- **Navigation Bar**: Easy switching between all pages with dark mode toggle
 - **Real-time Slot Management**: 200 parking slots (100 Ground + 100 First Floor) 
-- **Color-coded Interface**: Green (available) and Red (occupied) slots
+- **Color-coded Interface**: Green (available), Red (occupied), Yellow (maintenance), Blue (reserved), Purple (selected)
 - **PDF Ticket Generation**: Professional tickets with all details
 - **Automated Billing**: ₹20/hour with ceiling calculation
-- **Auto-Refresh Pages**: Exit Counter and Admin Dashboard update automatically
 - **Persistent State**: localStorage for data persistence across sessions
 - **Responsive Design**: Dark theme optimized for kiosk screens
 - **Revenue Analytics**: Real-time revenue tracking without NaN values
+
+### Enhanced Features
+- **Toast Notifications**: Success, error, warning, and info messages with auto-dismiss
+- **Dark Mode Support**: Theme switching with system preference detection
+- **Advanced Search & Filter**: Filter by slot ID, floor, status, and vehicle type
+- **Keyboard Shortcuts**: Ctrl+N for quick booking functionality
+- **Loading States**: Skeleton loaders for better user feedback
+- **Batch Operations**: Multi-slot selection and bulk actions
+- **Recent Vehicles**: Quick access to parking history
+- **Export Capabilities**: CSV exports for tickets, slots, revenue, and daily reports
+- **Enhanced Error Handling**: Comprehensive error boundaries and user feedback
+- **Component Modularity**: Reusable components for maintainability
 
 ## Technology Stack
 
@@ -78,19 +105,28 @@ smart-parking/
 │   ├── 📄 index.js                ← Entry point
 │   ├── 📄 index.css               ← Global styles
 │   ├── 📁 components/
-│   │   ├── 📄 Navigation.jsx      ← Navigation bar component
+│   │   ├── 📄 Navigation.jsx      ← Navigation bar component with dark mode toggle
 │   │   ├── 📄 BookingModal.jsx    ← Vehicle registration modal
-│   │   └── 📄 SlotCard.jsx        ← Individual slot component
+│   │   ├── 📄 SlotCard.jsx        ← Enhanced individual slot component
+│   │   ├── 📄 SlotSearchFilter.jsx ← Advanced search and filtering
+│   │   ├── 📄 SkeletonLoader.jsx  ← Loading state components
+│   │   ├── 📄 Toast.jsx          ← Individual toast notification
+│   │   ├── 📄 ToastContainer.jsx ← Toast notification system
+│   │   ├── 📄 RecentVehicles.jsx ← Recent vehicles quick access
+│   │   └── 📄 BatchOperations.jsx ← Multi-slot operations
 │   ├── 📁 context/
-│   │   └── 📄 ParkingContext.jsx  ← Global state management
+│   │   └── 📄 ParkingContext.jsx  ← Enhanced global state management
 │   ├── 📁 pages/
-│   │   ├── 📄 EntranceKiosk.jsx   ← Driver booking (route: /)
-│   │   ├── 📄 ExitCounter.jsx     ← Staff exit processing (route: /exit)
-│   │   └── 📄 AdminDashboard.jsx  ← Management analytics (route: /admin)
-│   └── 📁 utils/
-│       ├── 📄 billing.js          ← Billing calculation utilities
-│       ├── 📄 pdfGenerator.js     ← PDF ticket generation
-│       └── 📄 slotGenerator.js    ← Slot generation utilities
+│   │   ├── 📄 EntranceKiosk.jsx   ← Driver booking with search/filter
+│   │   ├── 📄 ExitCounter.jsx     ← Staff exit processing with exports
+│   │   └── 📄 AdminDashboard.jsx  ← Management analytics with batch ops
+│   ├── 📁 utils/
+│   │   ├── 📄 billing.js          ← Billing calculation utilities
+│   │   ├── 📄 pdfGenerator.js     ← PDF ticket generation
+│   │   ├── 📄 slotGenerator.js    ← Slot generation utilities
+│   │   └── 📄 exportData.js      ← CSV export utilities
+│   └── 📁 hooks/
+│       └── 📄 useKeyboardShortcuts.js ← Keyboard shortcut handling
 └── 📁 build/ (generated on build)
 ```
 

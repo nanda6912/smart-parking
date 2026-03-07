@@ -9,7 +9,7 @@ console.log('First floor slots:', initialSlots.filter(s => s.floor === 'first').
 const loadFromStorage = () => {
   try {
     const raw = localStorage.getItem('parkingState');
-    if (!raw) return { slots: initialSlots, tickets: [] };
+    if (!raw) return { slots: initialSlots, tickets: [], selectedSlots: [], loading: false };
     const parsed = JSON.parse(raw);
     return {
       slots: parsed.slots || initialSlots,
@@ -18,9 +18,11 @@ const loadFromStorage = () => {
         entryTime: t.entryTime ? new Date(t.entryTime) : null,
         exitTime: t.exitTime ? new Date(t.exitTime) : null,
       })),
+      selectedSlots: parsed.selectedSlots || [],
+      loading: false
     };
   } catch {
-    return { slots: initialSlots, tickets: [] };
+    return { slots: initialSlots, tickets: [], selectedSlots: [], loading: false };
   }
 };
 
@@ -60,6 +62,40 @@ const reducer = (state, action) => {
         ),
       };
     }
+
+    case 'SET_LOADING':
+      return {
+        ...state,
+        loading: action.payload
+      };
+
+    case 'TOGGLE_SLOT_SELECTION':
+      const { slotId } = action.payload;
+      const isSelected = state.selectedSlots.includes(slotId);
+      return {
+        ...state,
+        selectedSlots: isSelected
+          ? state.selectedSlots.filter(id => id !== slotId)
+          : [...state.selectedSlots, slotId]
+      };
+
+    case 'CLEAR_SELECTION':
+      return {
+        ...state,
+        selectedSlots: []
+      };
+
+    case 'BATCH_UPDATE_SLOTS':
+      const { slotIds, updates } = action.payload;
+      return {
+        ...state,
+        slots: state.slots.map(slot =>
+          slotIds.includes(slot.slotId)
+            ? { ...slot, ...updates }
+            : slot
+        ),
+        selectedSlots: []
+      };
 
     default:
       return state;
@@ -101,11 +137,36 @@ export const ParkingProvider = ({ children }) => {
   const getTicket = (ticketId) => state.tickets.find(t => t.ticketId === ticketId);
   const getSlot = (slotId) => state.slots.find(s => s.slotId === slotId);
 
+  const clearSelection = () => {
+    dispatch({ type: 'CLEAR_SELECTION' });
+  };
+
+  const toggleSlotSelection = (slotId) => {
+    dispatch({ type: 'TOGGLE_SLOT_SELECTION', payload: { slotId } });
+  };
+
+  const batchUpdateSlots = (slotIds, updates) => {
+    dispatch({ type: 'BATCH_UPDATE_SLOTS', payload: { slotIds, updates } });
+  };
+
+  const setLoading = (loading) => {
+    dispatch({ type: 'SET_LOADING', payload: loading });
+  };
+
   return (
     <ParkingContext.Provider value={{
       slots: state.slots,
       tickets: state.tickets,
-      bookSlot, releaseSlot, getTicket, getSlot
+      selectedSlots: state.selectedSlots,
+      loading: state.loading,
+      bookSlot, 
+      releaseSlot, 
+      getTicket, 
+      getSlot,
+      clearSelection,
+      toggleSlotSelection,
+      batchUpdateSlots,
+      setLoading
     }}>
       {children}
     </ParkingContext.Provider>

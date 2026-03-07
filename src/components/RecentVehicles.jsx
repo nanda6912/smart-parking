@@ -1,177 +1,142 @@
 import React, { useState, useEffect } from 'react';
-import { useParking } from '../context/ParkingContext';
-import { calculateBilling, formatDuration, formatCurrency } from '../utils/billing';
 
-const RecentVehicles = ({ limit = 5, showCompleted = false }) => {
-  const { tickets, releaseSlot } = useParking();
+const RecentVehicles = ({ tickets, onVehicleSelect, className = '' }) => {
   const [recentVehicles, setRecentVehicles] = useState([]);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [filter, setFilter] = useState('all'); // all, today, week
 
   useEffect(() => {
-    const filterAndSortVehicles = () => {
-      let filtered = tickets;
+    if (!tickets) return;
+
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+    let filtered = tickets.filter(ticket => {
+      const entryTime = new Date(ticket.entryTime);
       
-      if (!showCompleted) {
-        filtered = tickets.filter(t => t.status === 'ACTIVE');
+      switch (filter) {
+        case 'today':
+          return entryTime >= today;
+        case 'week':
+          return entryTime >= weekAgo;
+        default:
+          return true;
       }
+    });
 
-      if (searchTerm) {
-        filtered = filtered.filter(t => 
-          t.vehicleNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          t.ticketId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          t.slotId.toLowerCase().includes(searchTerm.toLowerCase())
-        );
-      }
+    // Sort by entry time (most recent first)
+    filtered.sort((a, b) => new Date(b.entryTime) - new Date(a.entryTime));
 
-      const sorted = filtered
-        .sort((a, b) => new Date(b.entryTime) - new Date(a.entryTime))
-        .slice(0, limit);
+    // Take only the most recent 10
+    setRecentVehicles(filtered.slice(0, 10));
+  }, [tickets, filter]);
 
-      setRecentVehicles(sorted);
-    };
-
-    filterAndSortVehicles();
-    const interval = setInterval(filterAndSortVehicles, 3000);
-    return () => clearInterval(interval);
-  }, [tickets, limit, showCompleted, searchTerm]);
-
-  const handleQuickExit = async (ticketId) => {
-    const result = releaseSlot(ticketId);
-    if (result) {
-      // Show success feedback
-      const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSuBzvLZiTYIG2m98OScTgwOUarm7blmGgU7k9n1unEiBC13yO/eizEIHWq+8+OWT');
-      audio.play().catch(() => {}); // Ignore audio errors
+  const formatDuration = (entryTime, exitTime = null) => {
+    const start = new Date(entryTime);
+    const end = exitTime ? new Date(exitTime) : new Date();
+    const duration = Math.floor((end - start) / (1000 * 60)); // minutes
+    
+    if (duration < 60) {
+      return `${duration} min`;
+    } else {
+      const hours = Math.floor(duration / 60);
+      const minutes = duration % 60;
+      return `${hours}h ${minutes}m`;
     }
   };
 
-  const getDuration = (entryTime) => {
-    const now = new Date();
-    const entry = new Date(entryTime);
-    return (now - entry) / (1000 * 60); // minutes
+  const getVehicleIcon = (vehicleType) => {
+    switch (vehicleType?.toLowerCase()) {
+      case 'car': return '🚗';
+      case 'bike': return '🏍️';
+      case 'suv': return '🚙';
+      case 'truck': return '🚚';
+      default: return '🚗';
+    }
   };
 
-  const getBilling = (entryTime) => {
-    try {
-      const now = new Date();
-      return calculateBilling(entryTime, now);
-    } catch {
-      return { amountDue: 0, duration: 0 };
+  const getStatusBadge = (ticket) => {
+    if (ticket.exitTime) {
+      return (
+        <span className="px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-full text-xs">
+          Completed
+        </span>
+      );
+    } else {
+      return (
+        <span className="px-2 py-1 bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 rounded-full text-xs">
+          Active
+        </span>
+      );
     }
   };
 
   return (
-    <div className="bg-gray-800 rounded-lg p-6 shadow-xl">
-      <div className="flex justify-between items-center mb-6">
-        <h3 className="text-xl font-bold text-blue-400">
-          {showCompleted ? '📋 Recent Activity' : '🚗 Recent Vehicles'}
+    <div className={`bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 ${className}`}>
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200">
+          Recent Vehicles
         </h3>
-        <span className="text-sm text-gray-400">
-          {recentVehicles.length} {showCompleted ? 'activities' : 'vehicles'}
-        </span>
+        <select
+          value={filter}
+          onChange={(e) => setFilter(e.target.value)}
+          className="px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+        >
+          <option value="all">All Time</option>
+          <option value="today">Today</option>
+          <option value="week">This Week</option>
+        </select>
       </div>
 
-      {/* Search */}
-      <div className="mb-4">
-        <input
-          type="text"
-          placeholder="Search by vehicle, ticket, or slot..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-        />
-      </div>
-
-      {/* Vehicle List */}
-      <div className="space-y-3">
-        {recentVehicles.length === 0 ? (
-          <div className="text-center py-8">
-            <div className="text-4xl mb-2">🅿️</div>
-            <p className="text-gray-400">
-              {searchTerm ? 'No vehicles found' : (showCompleted ? 'No recent activity' : 'No active vehicles')}
-            </p>
-          </div>
-        ) : (
-          recentVehicles.map(vehicle => {
-            const duration = getDuration(vehicle.entryTime);
-            const billing = getBilling(vehicle.entryTime);
-            const isCompleted = vehicle.status === 'COMPLETED';
-            
-            return (
-              <div 
-                key={vehicle.ticketId} 
-                className={`bg-gray-700 rounded-lg p-4 border transition-all duration-200 hover:shadow-lg ${
-                  isCompleted ? 'border-gray-600 opacity-75' : 'border-gray-500 hover:border-blue-500'
-                }`}
-              >
-                <div className="flex justify-between items-start">
-                  <div className="flex-1">
-                    <div className="flex items-center space-x-3 mb-2">
-                      <span className="font-mono text-sm text-blue-400">{vehicle.ticketId}</span>
-                      <span className={`px-2 py-1 rounded text-xs font-medium ${
-                        isCompleted 
-                          ? 'bg-gray-600 text-gray-300' 
-                          : 'bg-green-900 text-green-300'
-                      }`}>
-                        {vehicle.status}
-                      </span>
+      {recentVehicles.length === 0 ? (
+        <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+          <div className="text-4xl mb-2">🚗</div>
+          <p>No vehicles found</p>
+        </div>
+      ) : (
+        <div className="space-y-2 max-h-96 overflow-y-auto">
+          {recentVehicles.map((ticket) => (
+            <div
+              key={ticket.ticketId}
+              onClick={() => onVehicleSelect && onVehicleSelect(ticket)}
+              className="p-3 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-colors"
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="text-2xl">
+                    {getVehicleIcon(ticket.vehicle?.type)}
+                  </div>
+                  <div>
+                    <div className="font-medium text-gray-800 dark:text-gray-200">
+                      {ticket.vehicle?.number || 'Unknown'}
                     </div>
-                    
-                    <div className="grid grid-cols-2 gap-4 text-sm">
-                      <div>
-                        <p className="text-white font-medium">{vehicle.vehicleNumber}</p>
-                        <p className="text-gray-400">📞 {vehicle.phone}</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-gray-300">🅿️ Slot {vehicle.slotId}</p>
-                        <p className="text-gray-400">
-                          ⏱️ {formatDuration(duration)}
-                        </p>
-                      </div>
+                    <div className="text-sm text-gray-500 dark:text-gray-400">
+                      Slot: {ticket.slotId || ticket.slotNumber} • {formatDuration(ticket.entryTime, ticket.exitTime)}
                     </div>
-
-                    {!isCompleted && (
-                      <div className="mt-3 pt-3 border-t border-gray-600">
-                        <div className="flex justify-between items-center">
-                          <div>
-                            <p className="text-sm text-gray-400">Current billing</p>
-                            <p className="text-lg font-bold text-yellow-400">
-                              {formatCurrency(billing.amountDue)}
-                            </p>
-                          </div>
-                          <button
-                            onClick={() => handleQuickExit(vehicle.ticketId)}
-                            className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors duration-200 font-medium"
-                          >
-                            🚪 Quick Exit
-                          </button>
-                        </div>
-                      </div>
-                    )}
-
-                    {isCompleted && vehicle.exitTime && (
-                      <div className="mt-3 pt-3 border-t border-gray-600">
-                        <div className="flex justify-between items-center text-sm">
-                          <span className="text-gray-400">Exited: {new Date(vehicle.exitTime).toLocaleTimeString()}</span>
-                          <span className="text-green-400 font-medium">
-                            {formatCurrency(calculateBilling(vehicle.entryTime, vehicle.exitTime).amountDue)}
-                          </span>
-                        </div>
-                      </div>
-                    )}
+                    <div className="text-xs text-gray-400 dark:text-gray-500">
+                      {ticket.vehicle?.phone && `📱 ${ticket.vehicle.phone}`}
+                    </div>
                   </div>
                 </div>
+                <div className="text-right">
+                  {getStatusBadge(ticket)}
+                  {ticket.amount && (
+                    <div className="text-sm font-medium text-gray-800 dark:text-gray-200 mt-1">
+                      ₹{ticket.amount}
+                    </div>
+                  )}
+                </div>
               </div>
-            );
-          })
-        )}
-      </div>
+            </div>
+          ))}
+        </div>
+      )}
 
-      {/* Show More Link */}
-      {tickets.length > limit && (
-        <div className="mt-4 text-center">
-          <button className="text-blue-400 hover:text-blue-300 text-sm font-medium">
-            View all vehicles →
-          </button>
+      {recentVehicles.length > 0 && (
+        <div className="mt-4 pt-3 border-t border-gray-200 dark:border-gray-600">
+          <div className="text-xs text-gray-500 dark:text-gray-400 text-center">
+            Showing {recentVehicles.length} most recent vehicles
+          </div>
         </div>
       )}
     </div>

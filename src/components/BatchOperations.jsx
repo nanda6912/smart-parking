@@ -1,217 +1,134 @@
 import React, { useState } from 'react';
-import { useParking } from '../context/ParkingContext';
 
-const BatchOperations = () => {
-  const { slots, releaseSlot } = useParking();
-  const [selectedSlots, setSelectedSlots] = useState(new Set());
-  const [showBatchPanel, setShowBatchPanel] = useState(false);
+const BatchOperations = ({ selectedSlots, onBatchAction, onClearSelection }) => {
+  const [action, setAction] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleSelectAll = (floor = null) => {
-    const floorSlots = floor 
-      ? slots.filter(s => s.floor === floor)
-      : slots;
+  const handleBatchAction = async () => {
+    if (!action || selectedSlots.length === 0) return;
     
-    const availableSlots = floorSlots.filter(s => s.status === 'empty');
-    const slotIds = new Set(availableSlots.map(s => s.slotId));
-    
-    if (selectedSlots.size === slotIds.size && 
-        [...selectedSlots].every(id => slotIds.has(id))) {
-      // Deselect all if all are already selected
-      setSelectedSlots(new Set());
-    } else {
-      setSelectedSlots(slotIds);
+    setLoading(true);
+    try {
+      await onBatchAction(action, selectedSlots);
+      setAction('');
+      onClearSelection();
+    } catch (error) {
+      console.error('Batch action failed:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleBatchRelease = async () => {
-    const occupiedSelected = [...selectedSlots].filter(slotId => {
-      const slot = slots.find(s => s.slotId === slotId);
-      return slot?.status === 'occupied' && slot?.ticketId;
-    });
-
-    if (occupiedSelected.length === 0) {
-      alert('No occupied slots selected for release');
-      return;
-    }
-
-    const confirmed = window.confirm(
-      `Release ${occupiedSelected.length} vehicles from slots: ${occupiedSelected.join(', ')}?`
-    );
-
-    if (confirmed) {
-      let successCount = 0;
-      let errorCount = 0;
-
-      for (const slotId of occupiedSelected) {
-        const slot = slots.find(s => s.slotId === slotId);
-        if (slot?.ticketId) {
-          try {
-            releaseSlot(slot.ticketId);
-            successCount++;
-          } catch (error) {
-            console.error('Error releasing slot:', slotId, error);
-            errorCount++;
-          }
-        }
-      }
-
-      // Show results
-      const message = errorCount === 0 
-        ? `✅ Successfully released ${successCount} vehicles`
-        : `⚠️ Released ${successCount} vehicles, ${errorCount} errors`;
-      
-      alert(message);
-      setSelectedSlots(new Set());
+  const getActionButtonColor = (actionType) => {
+    switch (actionType) {
+      case 'release': return 'bg-red-500 hover:bg-red-600';
+      case 'reserve': return 'bg-blue-500 hover:bg-blue-600';
+      case 'maintenance': return 'bg-yellow-500 hover:bg-yellow-600';
+      case 'clean': return 'bg-green-500 hover:bg-green-600';
+      default: return 'bg-gray-500 hover:bg-gray-600';
     }
   };
 
-  const handleBatchReserve = () => {
-    const emptySelected = [...selectedSlots].filter(slotId => {
-      const slot = slots.find(s => s.slotId === slotId);
-      return slot?.status === 'empty';
-    });
-
-    if (emptySelected.length === 0) {
-      alert('No empty slots selected for reservation');
-      return;
+  const getActionIcon = (actionType) => {
+    switch (actionType) {
+      case 'release': return '🚪';
+      case 'reserve': return '🔒';
+      case 'maintenance': return '🔧';
+      case 'clean': return '🧹';
+      default: return '⚙️';
     }
-
-    alert(`Reservation feature for ${emptySelected.length} slots coming soon!`);
   };
 
-  const getSelectedSlotsInfo = () => {
-    const selectedArray = [...selectedSlots];
-    const occupied = selectedArray.filter(slotId => {
-      const slot = slots.find(s => s.slotId === slotId);
-      return slot?.status === 'occupied';
-    });
-    const empty = selectedArray.filter(slotId => {
-      const slot = slots.find(s => s.slotId === slotId);
-      return slot?.status === 'empty';
-    });
-
-    return { total: selectedArray.length, occupied: occupied.length, empty: empty.length };
+  const getActionLabel = (actionType) => {
+    switch (actionType) {
+      case 'release': return 'Release Slots';
+      case 'reserve': return 'Reserve Slots';
+      case 'maintenance': return 'Mark for Maintenance';
+      case 'clean': return 'Mark as Cleaned';
+      default: return 'Perform Action';
+    }
   };
 
-  const selectedInfo = getSelectedSlotsInfo();
+  if (selectedSlots.length === 0) {
+    return null;
+  }
 
   return (
-    <div className="fixed top-20 left-4 z-40">
-      {/* Toggle Button */}
-      <button
-        onClick={() => setShowBatchPanel(!showBatchPanel)}
-        className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
-          showBatchPanel 
-            ? 'bg-blue-600 text-white shadow-lg' 
-            : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-        }`}
-      >
-        {showBatchPanel ? '✖️ Close Batch' : '⚡ Batch Operations'}
-      </button>
+    <div className="fixed bottom-4 left-4 z-40 bg-white dark:bg-gray-800 rounded-lg shadow-xl p-4 max-w-md">
+      <div className="mb-3">
+        <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+          Batch Operations ({selectedSlots.length} slots selected)
+        </h3>
+        <div className="flex flex-wrap gap-1 mb-3">
+          {selectedSlots.map(slotId => (
+            <span
+              key={slotId}
+              className="px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded text-xs"
+            >
+              {slotId}
+            </span>
+          ))}
+        </div>
+      </div>
 
-      {/* Batch Panel */}
-      {showBatchPanel && (
-        <div className="mt-2 bg-gray-800 rounded-lg shadow-2xl border border-gray-700 w-80">
-          {/* Header */}
-          <div className="bg-gray-700 px-4 py-3 rounded-t-lg">
-            <h3 className="text-lg font-bold text-blue-400">⚡ Batch Operations</h3>
-            <p className="text-sm text-gray-400 mt-1">
-              {selectedInfo.total} slots selected
-            </p>
-          </div>
+      <div className="space-y-3">
+        <select
+          value={action}
+          onChange={(e) => setAction(e.target.value)}
+          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+          disabled={loading}
+        >
+          <option value="">Select Action...</option>
+          <option value="release">Release Slots</option>
+          <option value="reserve">Reserve Slots</option>
+          <option value="maintenance">Mark for Maintenance</option>
+          <option value="clean">Mark as Cleaned</option>
+        </select>
 
-          {/* Selection Info */}
-          {selectedInfo.total > 0 && (
-            <div className="px-4 py-3 bg-gray-700 border-b border-gray-600">
-              <div className="grid grid-cols-3 gap-2 text-center text-sm">
-                <div>
-                  <span className="text-gray-400">Total</span>
-                  <p className="text-white font-bold">{selectedInfo.total}</p>
-                </div>
-                <div>
-                  <span className="text-gray-400">Occupied</span>
-                  <p className="text-red-400 font-bold">{selectedInfo.occupied}</p>
-                </div>
-                <div>
-                  <span className="text-gray-400">Empty</span>
-                  <p className="text-green-400 font-bold">{selectedInfo.empty}</p>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Controls */}
-          <div className="p-4 space-y-3">
-            {/* Selection Controls */}
-            <div className="space-y-2">
-              <p className="text-sm text-gray-400 font-medium">Quick Select:</p>
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  onClick={() => handleSelectAll('ground')}
-                  className="px-3 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded text-sm transition-colors"
-                >
-                  Ground Floor
-                </button>
-                <button
-                  onClick={() => handleSelectAll('first')}
-                  className="px-3 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded text-sm transition-colors"
-                >
-                  First Floor
-                </button>
-                <button
-                  onClick={() => handleSelectAll()}
-                  className="px-3 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded text-sm transition-colors col-span-2"
-                >
-                  All Floors
-                </button>
-              </div>
-            </div>
-
-            {/* Batch Actions */}
-            {selectedInfo.total > 0 && (
-              <div className="space-y-2 pt-3 border-t border-gray-600">
-                <p className="text-sm text-gray-400 font-medium">Batch Actions:</p>
-                
-                {selectedInfo.occupied > 0 && (
-                  <button
-                    onClick={handleBatchRelease}
-                    className="w-full px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors font-medium"
-                  >
-                    🚪 Release {selectedInfo.occupied} Vehicles
-                  </button>
-                )}
-
-                {selectedInfo.empty > 0 && (
-                  <button
-                    onClick={handleBatchReserve}
-                    className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium"
-                  >
-                    📋 Reserve {selectedInfo.empty} Slots
-                  </button>
-                )}
-
-                <button
-                  onClick={() => setSelectedSlots(new Set())}
-                  className="w-full px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors font-medium"
-                >
-                  ✖️ Clear Selection
-                </button>
-              </div>
+        <div className="flex gap-2">
+          <button
+            onClick={handleBatchAction}
+            disabled={!action || loading}
+            className={`flex-1 px-4 py-2 text-white rounded-md transition-colors ${
+              action && !loading 
+                ? getActionButtonColor(action) 
+                : 'bg-gray-300 dark:bg-gray-600 cursor-not-allowed'
+            }`}
+          >
+            {loading ? (
+              <span className="flex items-center justify-center">
+                <svg className="animate-spin h-4 w-4 mr-2" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                </svg>
+                Processing...
+              </span>
+            ) : (
+              <span className="flex items-center justify-center">
+                {action && getActionIcon(action)}
+                {action ? getActionLabel(action) : 'Select Action'}
+              </span>
             )}
+          </button>
 
-            {/* Instructions */}
-            {selectedInfo.total === 0 && (
-              <div className="text-sm text-gray-400 bg-gray-700 rounded-lg p-3">
-                <p className="font-medium mb-2">How to use:</p>
-                <ul className="space-y-1 text-xs">
-                  <li>• Click slots on the main grid to select them</li>
-                  <li>• Use quick select buttons above</li>
-                  <li>• Selected slots will be highlighted</li>
-                  <li>• Perform batch actions on selected slots</li>
-                </ul>
-              </div>
-            )}
-          </div>
+          <button
+            onClick={onClearSelection}
+            disabled={loading}
+            className="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 transition-colors"
+          >
+            Clear
+          </button>
+        </div>
+      </div>
+
+      {/* Action Preview */}
+      {action && (
+        <div className="mt-3 p-2 bg-gray-100 dark:bg-gray-700 rounded text-xs text-gray-600 dark:text-gray-400">
+          <strong>Preview:</strong> {getActionLabel(action)} for {selectedSlots.length} slot(s)
+          {action === 'release' && ' - This will free all selected slots and complete any active tickets.'}
+          {action === 'reserve' && ' - This will mark selected slots as reserved.'}
+          {action === 'maintenance' && ' - This will mark selected slots as under maintenance.'}
+          {action === 'clean' && ' - This will mark selected slots as cleaned and ready for use.'}
         </div>
       )}
     </div>
