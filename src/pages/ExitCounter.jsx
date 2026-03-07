@@ -3,11 +3,10 @@ import { useParking } from '../context/ParkingContext';
 import { useToast } from '../components/ToastContainer';
 import { calculateBilling, formatDuration, formatCurrency } from '../utils/billing';
 import RecentVehicles from '../components/RecentVehicles';
-import SkeletonLoader from '../components/SkeletonLoader';
 import { exportTicketsToCSV, generateDailyReport } from '../utils/exportData';
 
 const ExitCounter = () => {
-  const { getTicket, releaseSlot, tickets, slots, loading, setLoading } = useParking();
+  const { getTicket, releaseSlot, tickets, slots } = useParking();
   const { showSuccess, showError, showInfo } = useToast();
   const [ticketId, setTicketId] = useState('');
   const [searchResult, setSearchResult] = useState(null);

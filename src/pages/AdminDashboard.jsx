@@ -3,12 +3,11 @@ import { useParking } from '../context/ParkingContext';
 import { useToast } from '../components/ToastContainer';
 import { calculateBilling, formatDuration, formatCurrency } from '../utils/billing';
 import BatchOperations from '../components/BatchOperations';
-import SkeletonLoader from '../components/SkeletonLoader';
 import { exportTicketsToCSV, exportSlotsToCSV, exportRevenueReport, generateDailyReport } from '../utils/exportData';
 
 const AdminDashboard = () => {
-  const { tickets, slots, selectedSlots, clearSelection, toggleSlotSelection, batchUpdateSlots, loading, setLoading } = useParking();
-  const { showSuccess, showError, showInfo } = useToast();
+  const { tickets, slots, selectedSlots, clearSelection, toggleSlotSelection, batchUpdateSlots, setLoading } = useParking();
+  const { showSuccess, showError } = useToast();
   const [selectedPeriod, setSelectedPeriod] = useState('today');
   const [stats, setStats] = useState({
     totalRevenue: 0,
